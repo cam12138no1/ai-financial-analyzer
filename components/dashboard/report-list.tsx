@@ -140,7 +140,9 @@ export default function ReportList({ onSelectAnalysis, onRefresh }: ReportListPr
                 ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20 animate-pulse' 
                 : report.error
                   ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/20'
-                  : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/20'
+                  : report.company_type === 'ai_supply_chain'
+                    ? 'bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/20'
+                    : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/20'
             }`}>
               {report.processing ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -159,6 +161,15 @@ export default function ReportList({ onSelectAnalysis, onRefresh }: ReportListPr
                 </h4>
                 {report.company_symbol && (
                   <span className="text-xs text-gray-400">{report.company_symbol}</span>
+                )}
+                {report.company_type && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    report.company_type === 'ai_supply_chain' 
+                      ? 'bg-purple-100 text-purple-600' 
+                      : 'bg-blue-100 text-blue-600'
+                  }`}>
+                    {report.company_type === 'ai_supply_chain' ? '供应链' : '应用'}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">

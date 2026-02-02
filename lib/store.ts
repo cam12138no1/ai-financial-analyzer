@@ -1,12 +1,13 @@
 // In-memory storage for demo mode (when no database is configured)
 // This store persists across API requests in the same server instance
 
-import { AnalysisResult, ResultsTableRow, DriverDetail } from './ai/analyzer'
+import { AnalysisResult, ResultsTableRow, DriverDetail, CompanyType } from './ai/analyzer'
 
 export interface StoredAnalysis {
   id: string
   company_name: string
   company_symbol: string
+  company_type: CompanyType  // AI应用公司 or AI供应链公司
   report_type: string
   fiscal_year: number
   fiscal_quarter?: number

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { X, Upload, Loader2, FileText, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react'
+import { X, Upload, Loader2, FileText, CheckCircle2, AlertCircle, Trash2, Cpu, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from '@/components/ui/toaster'
@@ -12,6 +12,8 @@ interface UploadModalProps {
   onClose: () => void
   onSuccess: () => void
 }
+
+type CompanyType = 'ai_application' | 'ai_supply_chain'
 
 interface FileWithStatus {
   file: File
@@ -23,6 +25,7 @@ interface FileWithStatus {
 export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
   const t = useTranslations()
   const [files, setFiles] = useState<FileWithStatus[]>([])
+  const [companyType, setCompanyType] = useState<CompanyType>('ai_application')
   const [dragActive, setDragActive] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -44,7 +47,6 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
     Array.from(newFiles).forEach((file) => {
       if (file.type === 'application/pdf') {
-        // Check if file already exists
         if (!files.some(f => f.file.name === file.name)) {
           validFiles.push({
             file,
@@ -60,7 +62,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (invalidFiles.length > 0) {
       toast({
         title: t('common.error'),
-        description: `${t('upload.onlyPdfSupported')}: ${invalidFiles.join(', ')}`,
+        description: `仅支持 PDF 文件: ${invalidFiles.join(', ')}`,
         variant: 'destructive',
       })
     }
@@ -84,7 +86,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (e.target.files?.length) {
       addFiles(e.target.files)
     }
-    e.target.value = '' // Reset to allow re-selecting same files
+    e.target.value = ''
   }
 
   const removeFile = (id: string) => {
@@ -95,27 +97,22 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (files.length === 0) {
       toast({
         title: t('common.error'),
-        description: t('upload.selectFile'),
+        description: '请选择要上传的文件',
         variant: 'destructive',
       })
       return
     }
 
     setIsSubmitting(true)
-
-    // Mark all as uploading
     setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })))
 
-    // Show toast and close modal immediately
     toast({
-      title: `📤 ${t('upload.backgroundProcessing')}`,
-      description: t('upload.submittedForAnalysis', { count: files.length }),
+      title: '📤 正在后台处理',
+      description: `${files.length} 份财报已提交分析，完成后将自动更新`,
     })
     
-    // Close modal immediately - processing continues in background
     onClose()
 
-    // Process files in parallel (but limit concurrency to 3)
     const pendingFiles = [...files]
     const results: { success: number; failed: number } = { success: 0, failed: 0 }
 
@@ -123,6 +120,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       try {
         const formData = new FormData()
         formData.append('file', fileItem.file)
+        formData.append('companyType', companyType)
 
         const response = await fetch('/api/reports/upload', {
           method: 'POST',
@@ -141,27 +139,24 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       }
     }
 
-    // Process in batches of 3
     for (let i = 0; i < pendingFiles.length; i += 3) {
       const batch = pendingFiles.slice(i, i + 3)
       await Promise.all(batch.map(uploadFile))
     }
 
-    // Show completion toast
     if (results.failed === 0) {
       toast({
-        title: `✅ ${t('upload.analysisComplete')}`,
-        description: t('upload.reportsCompleted', { count: results.success }),
+        title: '✅ 分析完成',
+        description: `${results.success} 份财报分析已完成`,
       })
     } else {
       toast({
-        title: `⚠️ ${t('upload.partialComplete')}`,
-        description: t('upload.successFailed', { success: results.success, failed: results.failed }),
+        title: '⚠️ 部分完成',
+        description: `成功 ${results.success}，失败 ${results.failed}`,
         variant: results.success === 0 ? 'destructive' : 'default',
       })
     }
 
-    // Reset files state and trigger refresh
     setFiles([])
     setIsSubmitting(false)
     onSuccess()
@@ -172,12 +167,12 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl bg-white shadow-2xl border-0 overflow-hidden">
-        {/* Header with gradient */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">{t('upload.title')}</h2>
-              <p className="text-blue-100 text-sm mt-1">{t('upload.subtitle')}</p>
+              <h2 className="text-xl font-bold text-white">批量上传财报</h2>
+              <p className="text-blue-100 text-sm mt-1">支持多文件拖拽上传，AI自动分析归档</p>
             </div>
             <Button 
               variant="ghost" 
@@ -191,6 +186,56 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         </div>
 
         <div className="p-6 space-y-5">
+          {/* Company Type Selection */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700">选择公司类型</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setCompanyType('ai_application')}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  companyType === 'ai_application'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                  companyType === 'ai_application' ? 'bg-blue-500' : 'bg-gray-200'
+                }`}>
+                  <Layers className={`h-5 w-5 ${companyType === 'ai_application' ? 'text-white' : 'text-gray-500'}`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-semibold ${companyType === 'ai_application' ? 'text-blue-700' : 'text-gray-700'}`}>
+                    AI 应用公司
+                  </p>
+                  <p className="text-xs text-gray-500">Meta, Google, Microsoft...</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCompanyType('ai_supply_chain')}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  companyType === 'ai_supply_chain'
+                    ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-200'
+                    : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                  companyType === 'ai_supply_chain' ? 'bg-purple-500' : 'bg-gray-200'
+                }`}>
+                  <Cpu className={`h-5 w-5 ${companyType === 'ai_supply_chain' ? 'text-white' : 'text-gray-500'}`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-semibold ${companyType === 'ai_supply_chain' ? 'text-purple-700' : 'text-gray-700'}`}>
+                    AI 供应链公司
+                  </p>
+                  <p className="text-xs text-gray-500">NVIDIA, TSMC, AMD...</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Drop Zone */}
           <div
             onDragEnter={handleDrag}
@@ -220,10 +265,10 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                 </div>
                 <div>
                   <p className="text-lg font-medium text-gray-900">
-                    {t('upload.dragDrop')} <span className="text-blue-600">{t('upload.clickSelect')}</span>
+                    拖拽文件到此处或 <span className="text-blue-600">点击选择</span>
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {t('upload.supportBatch')}
+                    支持批量上传 PDF 格式财报
                   </p>
                 </div>
               </div>
@@ -242,7 +287,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                 </span>
               </div>
               
-              <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
                 {files.map((fileItem) => (
                   <div 
                     key={fileItem.id}
@@ -270,9 +315,6 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                       </p>
                       <p className="text-xs text-gray-500">
                         {(fileItem.file.size / 1024 / 1024).toFixed(2)} MB
-                        {fileItem.error && (
-                          <span className="text-red-500 ml-2">{fileItem.error}</span>
-                        )}
                       </p>
                     </div>
                     
@@ -292,18 +334,30 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
             </div>
           )}
 
-          {/* Info Box */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4">
+          {/* Prompt Info */}
+          <div className={`border rounded-xl p-4 ${
+            companyType === 'ai_application' 
+              ? 'bg-blue-50 border-blue-200' 
+              : 'bg-purple-50 border-purple-200'
+          }`}>
             <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                companyType === 'ai_application' ? 'bg-blue-100' : 'bg-purple-100'
+              }`}>
+                {companyType === 'ai_application' ? (
+                  <Layers className="h-4 w-4 text-blue-600" />
+                ) : (
+                  <Cpu className="h-4 w-4 text-purple-600" />
+                )}
               </div>
               <div className="text-sm">
-                <p className="font-medium text-blue-900">{t('upload.aiSmartAnalysis')}</p>
-                <p className="text-blue-700 mt-0.5">
-                  {t('upload.aiDescription')}
+                <p className={`font-medium ${companyType === 'ai_application' ? 'text-blue-900' : 'text-purple-900'}`}>
+                  {companyType === 'ai_application' ? 'AI 应用公司分析模式' : 'AI 供应链公司分析模式'}
+                </p>
+                <p className={companyType === 'ai_application' ? 'text-blue-700' : 'text-purple-700'}>
+                  {companyType === 'ai_application' 
+                    ? '关注用户增长、变现效率、AI赋能指标' 
+                    : '关注产能、良率、ASP、客户集中度、库存周期'}
                 </p>
               </div>
             </div>
@@ -316,22 +370,26 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
               onClick={onClose}
               className="px-6"
             >
-              {t('common.cancel')}
+              取消
             </Button>
             <Button 
               onClick={handleSubmit}
               disabled={files.length === 0 || isSubmitting}
-              className="px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className={`px-8 ${
+                companyType === 'ai_application'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+              }`}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('upload.submitting')}
+                  提交中...
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  {t('upload.startAnalysis')} ({files.length})
+                  开始分析 ({files.length})
                 </>
               )}
             </Button>

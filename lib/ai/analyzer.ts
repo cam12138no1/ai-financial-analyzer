@@ -41,6 +41,7 @@ export interface AnalysisResult {
   results_summary: string
   results_table: ResultsTableRow[]
   results_explanation: string
+  guidance_vs_expectations: string
   drivers_summary: string
   drivers: {
     demand: DriverDetail
@@ -75,174 +76,216 @@ export interface AnalysisResult {
 
 // ==================== AI 应用公司 Prompt ====================
 const AI_APPLICATION_PROMPT = `角色与目标
-你是一名顶级美股/科技股研究分析师（sell-side 写作风格），要产出一份可给投委会/董事会阅读的财报分析。你的目标不是复述财报，而是回答：
+你是一名顶级美股/科技股研究分析师（sell-side 写作风格），要产出一份可给投委会/董事会阅读的**详细**财报分析。你的目标不是复述财报，而是回答：
 "本次财报是否改变了我们对未来 2–3 年现金流与竞争力的判断？"
 
-重要说明：年报(10-K)通常与Q4合并发布，请正确识别报告期类型。
+重要说明：
+- 年报(10-K)通常与Q4合并发布，请正确识别报告期类型
+- 必须提供具体数字和百分比，不要使用模糊描述
+- 所有对比必须给出具体差值（如 +0.6%, -183bp）
+- 必须区分：实际值 vs 市场预期 vs 指引
 
-输出格式（必须严格按此JSON结构，每个字段都必须填写完整内容）
-
-请返回以下JSON格式的完整分析：
+输出格式（必须严格按此JSON结构，每个字段都必须填写**详细完整**的内容）
 
 {
-  "one_line_conclusion": "一句话结论：Beat/Miss + 最关键驱动 + 最大风险。例：核心收入/指引超预期，增长由{驱动A}+{驱动B}带动；但{风险点}可能在未来{时间窗口}压制利润/FCF。",
+  "one_line_conclusion": "核心收入与需求端显著超预期，增长由[具体驱动A] + [具体驱动B]带动；但[具体风险]将在未来[时间窗口]压制[具体财务指标]。必须包含：Beat/Miss判断 + 量化驱动 + 量化风险",
   
-  "results_summary": "结果层概述，如：业绩强劲，指引炸裂，CapEx震惊市场。",
+  "results_summary": "一句话概括业绩表现，如：核心业务超预期，但成本前置压缩利润率",
   
   "results_table": [
-    {"metric": "Revenue", "actual": "$59.89B", "consensus": "~$58.45B", "delta": "+2.5%", "assessment": "Beat (广告需求强劲)"},
-    {"metric": "EPS (Diluted)", "actual": "$8.88", "consensus": "~$8.20", "delta": "+8.3%", "assessment": "Beat (运营杠杆显现)"},
-    {"metric": "Operating Income", "actual": "$24.75B", "consensus": "~$23.5B", "delta": "+5.3%", "assessment": "Beat (核心业务利润率稳健)"},
-    {"metric": "Q1 指引", "actual": "$53.5-56.5B", "consensus": "~$51.3B", "delta": "+7%", "assessment": "Strong Beat (增长加速信号)"},
-    {"metric": "FY CapEx", "actual": "$115-135B", "consensus": "~$110B", "delta": "+13.6%", "assessment": "Shock (远超预期)"}
+    {"metric": "Revenue", "actual": "$XX.Xbn", "consensus": "$XX.Xbn (来源)", "delta": "+X.X%", "assessment": "Beat/Miss + 一句话原因"},
+    {"metric": "广告收入", "actual": "$XX.Xbn", "consensus": "$XX.Xbn", "delta": "+X.X%", "assessment": "结构性改善原因"},
+    {"metric": "Operating Income (GAAP)", "actual": "$XX.Xbn", "consensus": "$XX.Xbn", "delta": "-X.X%", "assessment": "Miss原因：Opex前置"},
+    {"metric": "Operating Margin", "actual": "XX.X%", "consensus": "XX.X%", "delta": "-XXXbp", "assessment": "具体原因"},
+    {"metric": "EPS (GAAP)", "actual": "$X.XX", "consensus": "$X.XX", "delta": "+X.X%", "assessment": "Beat/Miss"},
+    {"metric": "下季指引", "actual": "$XX-XXbn", "consensus": "~$XXbn", "delta": "+X%", "assessment": "评价"},
+    {"metric": "全年CapEx指引", "actual": "$XXX-XXXbn", "consensus": "~$XXXbn", "delta": "+XX%", "assessment": "评价"}
   ],
   
-  "results_explanation": "关键解释：收入超预期源于...；CapEx激增因为...",
+  "results_explanation": "差异来源拆解：\\n- 需求端：[具体原因，如广告主转化率改善，量价齐升]\\n- 供给/成本端：[具体原因，如AI人才+算力+法律费用前置]\\n- 非经常性：[如税率因结算事项一次性利好]",
   
-  "drivers_summary": "驱动概述，如：增长逻辑已从'用户红利'完全切换为'AI提效'",
+  "guidance_vs_expectations": "指引 vs 市场隐含预期：\\n- 下季Revenue指引：$XX-XXbn（同比X%，含约X% FX顺风）\\n- 全年Total Expenses：$XXX-XXXbn（同比显著加速）\\n- 全年CapEx：$XXX-XXXbn（同比+XX%+）\\n- 管理层框架：[如"2026年OI绝对值>2025年"，但不设利润率下限]\\n→ 结论：收入增长好于预期，但盈利与现金流质量被主动牺牲换取算力规模",
+  
+  "drivers_summary": "增长机制概述，如：增长逻辑正从'用户红利'切换为'AI驱动效率提升'",
   
   "drivers": {
     "demand": {
       "category": "A",
-      "title": "需求/量：用户/使用量/订单量",
-      "change": "变化描述，如：DAP达3.58亿，同比增长+6.9%",
-      "magnitude": "幅度，如：+6.9% YoY",
-      "reason": "原因，如：推荐算法优化使用户停留时间延长"
+      "title": "需求/量",
+      "change": "发生了什么：\\n- 广告展示量 +XX% YoY\\n- DAP +X% YoY\\n- [具体产品]观看时长 +XX% YoY",
+      "magnitude": "+XX% YoY",
+      "reason": "为什么：\\n- [具体机制1，如推荐系统架构简化]\\n- [具体机制2，如内容新鲜度权重提升]"
     },
     "monetization": {
       "category": "B",
-      "title": "变现/单价：ARPU/价格/转化率",
-      "change": "变化描述",
-      "magnitude": "幅度",
-      "reason": "原因"
+      "title": "变现/单价",
+      "change": "发生了什么：\\n- 平均广告价格 +X% YoY\\n- 转化率：[平台A] +X.X%, [平台B] +X%",
+      "magnitude": "+X% YoY",
+      "reason": "为什么：\\n- [具体机制1，如GEM基础模型扩展]\\n- [具体机制2，如增量归因模型→转化+XX%]"
     },
     "efficiency": {
       "category": "C",
-      "title": "内部效率：人效/算力效率/成本",
-      "change": "变化描述",
-      "magnitude": "幅度",
-      "reason": "原因"
+      "title": "内部效率",
+      "change": "发生了什么：\\n- 工程师人效 +XX% YoY\\n- AI编码工具使用率 +XX%\\n- [具体系统]算力效率 近Xx",
+      "magnitude": "+XX%",
+      "reason": "为什么：\\n- [具体机制1，如Agentic coding工具放量]\\n- [具体机制2，如模型整合减少重复算力]"
     }
   },
   
   "investment_roi": {
-    "capex_change": "CapEx变化描述",
-    "opex_change": "Opex变化描述",
-    "investment_direction": "投入指向：算力/人才/渠道/供应链/并购",
-    "roi_evidence": ["ROI证据1", "ROI证据2", "ROI证据3"],
-    "management_commitment": "管理层底线承诺"
+    "capex_change": "本期投入变化（主要矛盾）：\\n- CapEx（FY当年）：$XXbn → FY下年指引 $XXX-XXXbn（+XX%）\\n- Opex增长主因：基础设施（云+折旧）+ AI技术人才",
+    "opex_change": "Opex变化细节：[具体数字和增速]",
+    "investment_direction": "投入指向：\\n- 超大规模训练算力（自建+公有云）\\n- [具体Lab/部门]（模型、Agent、个性化AI）\\n- 自研芯片[名称] + 多芯片策略",
+    "roi_evidence": [
+      "转化率与广告点击提升（直接反映在价格与收入）",
+      "[具体产品]收入run-rate $XXbn",
+      "[具体业务]年化$Xbn+",
+      "内部生产率提升 → 抑制长期人头膨胀"
+    ],
+    "management_commitment": "管理层底线框架：\\n- 仅承诺：OI绝对值增长\\n- 未承诺：FCF正增长/利润率区间\\n→ 现金流可见性缺口仍在"
   },
   
   "sustainability_risks": {
-    "sustainable_drivers": ["可持续驱动1", "可持续驱动2", "可持续驱动3"],
-    "main_risks": ["主要风险1", "主要风险2", "主要风险3"],
-    "checkpoints": ["检查点1", "检查点2", "检查点3"]
+    "sustainable_drivers": [
+      "[具体驱动1]仍处'早期'，如：推荐系统×LLM融合",
+      "[具体产品]广告与商业消息化尚未完全变现",
+      "AI工具对内降本、对外提效的复利效应"
+    ],
+    "main_risks": [
+      "资本强度风险：CapEx高位若常态化，FCF中枢下移",
+      "监管风险：[具体政策]影响在[时间]放大",
+      "边际ROI风险：算力扩张是否仍具高回报尚未验证"
+    ],
+    "checkpoints": [
+      "1H下年：广告转化率与价格是否继续双升",
+      "2H下年：CapEx实际落点 vs 指引上限",
+      "FY下年：FCF是否仍为正"
+    ]
   },
   
   "model_impact": {
-    "revenue_adjustment": "收入假设调整",
-    "capex_adjustment": "CapEx假设调整",
-    "valuation_change": "估值变化",
-    "logic_chain": "逻辑链：财报信号 → 假设变化 → 估值变化"
+    "revenue_adjustment": "上调：中期收入CAGR（广告转化与AI工具）+ 长期竞争壁垒（数据×模型×分发）",
+    "capex_adjustment": "下调：2026-27 FCF + 近端利润率",
+    "valuation_change": "估值更多依赖终值假设而非近端现金流",
+    "logic_chain": "财报显示ROI → 上调收入 → 但CapEx前置 → 估值依赖长期"
   },
   
   "final_judgment": {
-    "confidence": "我们更有信心的是...",
-    "concerns": "我们更担心的是...",
+    "confidence": "本次财报强化了我们对[公司]核心业务竞争力与AI驱动增长机制的信心，尤其是在[具体方面]的系统性优势。",
+    "concerns": "同时，公司主动选择进入高资本强度、低短期现金回报的阶段，未来2-3年的FCF确定性下降。",
     "net_impact": "更强/更弱/不变",
-    "recommendation": "建议"
+    "recommendation": "投资判断的关键不在于'AI叙事是否成立'，而在于算力与模型规模扩张的边际ROI能否持续高于资本成本。在此之前，[公司]更像一只长期看多、短期需承受现金流波动的结构性资产。"
   }
 }
 
 写作风格约束（强制）
-- 必须 vs 预期（没有预期就用"隐含预期/历史区间"替代）
-- 必须把 AI/技术从"故事"落到 指标→机制→财务变量
-- 必须识别并剥离 一次性因素（罚款、诉讼、重组、资产减值等）
+- 必须提供具体数字，不允许"约"、"大约"等模糊词
+- 所有 vs 预期必须给出差值百分比或bp
+- 驱动层每块必须有2-3个具体指标+变化幅度+原因
 - 不允许空泛形容词（"强劲""亮眼"）不带指标
-- results_table必须包含至少5-7行关键指标`
+- results_table必须包含7-10行关键指标（含收入分项、利润、margin、指引）
+- 差异来源拆解必须分：需求端、供给/成本端、非经常性 三块`
 
 // ==================== AI 供应链公司 Prompt ====================
 const AI_SUPPLY_CHAIN_PROMPT = `角色与目标
-你是一名顶级半导体/AI基础设施研究分析师（sell-side 写作风格），要产出一份可给投委会/董事会阅读的财报分析。你的目标不是复述财报，而是回答：
+你是一名顶级半导体/AI基础设施研究分析师（sell-side 写作风格），要产出一份可给投委会/董事会阅读的**详细**财报分析。你的目标不是复述财报，而是回答：
 "本次财报是否改变了我们对AI算力供需格局及公司竞争地位的判断？"
 
 重要说明：
-- AI供应链公司的核心在于：产能、良率、客户集中度、库存周期、ASP趋势
-- 关注GPU/AI芯片、HBM、CoWoS封装、网络设备、服务器等关键环节
-- 年报(10-K)通常与Q4合并发布，请正确识别报告期类型
+- AI供应链公司核心：产能、良率、客户集中度、库存周期、ASP趋势
+- 关注：GPU/AI芯片、HBM、CoWoS封装、网络设备、服务器等
+- 必须提供具体数字和百分比
+- 年报(10-K)通常与Q4合并发布
 
-输出格式（必须严格按此JSON结构，每个字段都必须填写完整内容）
-
-请返回以下JSON格式的完整分析：
+输出格式（必须严格按此JSON结构，每个字段都必须填写**详细完整**的内容）
 
 {
-  "one_line_conclusion": "一句话结论：Beat/Miss + 最关键供需信号 + 最大产能/技术风险。例：数据中心收入创纪录，AI芯片供不应求持续至{时间}；但{竞争对手/产能瓶颈}可能在{时间窗口}影响市场份额。",
+  "one_line_conclusion": "数据中心收入创纪录，AI芯片供不应求持续至[时间]；但[竞争对手/产能瓶颈]可能在[时间]影响[具体指标]。必须包含：Beat/Miss + 供需信号 + 产能/技术风险",
   
-  "results_summary": "结果层概述，如：数据中心收入爆发，毛利率创新高，产能扩张加速。",
+  "results_summary": "一句话概括：如数据中心爆发，毛利率创新高，产能扩张加速",
   
   "results_table": [
-    {"metric": "Revenue", "actual": "$35.1B", "consensus": "~$33.2B", "delta": "+5.7%", "assessment": "Beat (数据中心需求超预期)"},
-    {"metric": "Data Center Revenue", "actual": "$30.8B", "consensus": "~$28.5B", "delta": "+8.1%", "assessment": "Strong Beat (AI训练+推理双驱动)"},
-    {"metric": "Gross Margin", "actual": "76.0%", "consensus": "~74.5%", "delta": "+1.5pp", "assessment": "Beat (产品组合优化)"},
-    {"metric": "EPS (Diluted)", "actual": "$0.89", "consensus": "~$0.84", "delta": "+6.0%", "assessment": "Beat"},
-    {"metric": "Next Q Guidance", "actual": "$37.5B±2%", "consensus": "~$36.0B", "delta": "+4.2%", "assessment": "Beat (供给改善信号)"},
-    {"metric": "Inventory", "actual": "$8.5B", "consensus": "~$7.8B", "delta": "+9.0%", "assessment": "Above (为需求增长备货)"}
+    {"metric": "Revenue", "actual": "$XX.Xbn", "consensus": "~$XX.Xbn", "delta": "+X.X%", "assessment": "Beat (数据中心需求超预期)"},
+    {"metric": "Data Center Revenue", "actual": "$XX.Xbn", "consensus": "~$XX.Xbn", "delta": "+X.X%", "assessment": "Strong Beat (AI训练+推理双驱动)"},
+    {"metric": "Gaming/其他分部", "actual": "$X.Xbn", "consensus": "~$X.Xbn", "delta": "+/-X%", "assessment": "评价"},
+    {"metric": "Gross Margin", "actual": "XX.X%", "consensus": "~XX.X%", "delta": "+/-XXbp", "assessment": "评价(产品组合)"},
+    {"metric": "EPS (Diluted)", "actual": "$X.XX", "consensus": "~$X.XX", "delta": "+X%", "assessment": "Beat"},
+    {"metric": "下季指引", "actual": "$XX.Xbn±X%", "consensus": "~$XX.Xbn", "delta": "+X%", "assessment": "供给改善信号"},
+    {"metric": "Inventory", "actual": "$X.Xbn", "consensus": "~$X.Xbn", "delta": "+X%", "assessment": "为需求增长备货"}
   ],
   
-  "results_explanation": "关键解释：数据中心超预期源于...；毛利率改善因为...；库存增加反映...",
+  "results_explanation": "差异来源拆解：\\n- 数据中心超预期源于：[具体客户/应用场景]\\n- 毛利率改善因为：[产品组合/定价权]\\n- 库存变化反映：[需求预期/供给准备]",
   
-  "drivers_summary": "驱动概述，如：AI训练需求持续爆发，推理场景开始贡献增量",
+  "guidance_vs_expectations": "指引 vs 市场预期：\\n- 下季Revenue指引：$XXbn±X%（vs 预期$XXbn）\\n- 毛利率指引：XX%±Xpp\\n- 产能扩张计划：[具体内容]\\n→ 结论：供给瓶颈正在缓解/加剧",
+  
+  "drivers_summary": "AI训练需求持续爆发，推理场景开始贡献增量",
   
   "drivers": {
     "demand": {
       "category": "A",
       "title": "需求端：订单/出货量/客户扩张",
-      "change": "变化描述，如：云厂商CapEx指引合计上调15%，数据中心GPU出货量+40% QoQ",
-      "magnitude": "幅度，如：+40% QoQ",
-      "reason": "原因，如：GPT-5训练集群部署加速，CSP扩大采购"
+      "change": "发生了什么：\\n- 云厂商CapEx指引合计上调XX%\\n- 数据中心GPU出货量 +XX% QoQ\\n- 新增[具体大客户]",
+      "magnitude": "+XX% QoQ",
+      "reason": "为什么：\\n- [具体模型]训练集群部署加速\\n- CSP扩大采购"
     },
     "monetization": {
       "category": "B",
       "title": "供给端：产能/良率/ASP",
-      "change": "变化描述，如：CoWoS产能环比+25%，HBM3e良率达85%",
-      "magnitude": "幅度，如：ASP +10% QoQ",
-      "reason": "原因，如：高端产品占比提升，供不应求支撑定价权"
+      "change": "发生了什么：\\n- [封装技术]产能环比+XX%\\n- [内存技术]良率达XX%\\n- ASP +XX% QoQ",
+      "magnitude": "ASP +XX% QoQ",
+      "reason": "为什么：\\n- 高端产品占比提升\\n- 供不应求支撑定价权"
     },
     "efficiency": {
       "category": "C",
       "title": "技术迭代：制程/架构/成本",
-      "change": "变化描述，如：新架构推出领先竞争对手6个月",
-      "magnitude": "幅度",
-      "reason": "原因，如：研发投入转化为产品代际优势"
+      "change": "发生了什么：\\n- 新架构推出领先竞争对手X个月\\n- [具体技术]效能提升XX%",
+      "magnitude": "+XX%",
+      "reason": "为什么：\\n- 研发投入转化为产品代际优势\\n- 制程领先带来成本优势"
     }
   },
   
   "investment_roi": {
-    "capex_change": "CapEx变化描述，如：产能扩张投资+50%，主要用于先进封装",
-    "opex_change": "研发投入变化，如：研发费用占比维持25%，聚焦下一代架构",
+    "capex_change": "产能扩张投资+XX%，主要用于[先进封装/制程]",
+    "opex_change": "研发费用占比维持XX%，聚焦[下一代架构]",
     "investment_direction": "投入指向：先进制程/封装产能/HBM/网络芯片/软件生态",
-    "roi_evidence": ["ROI证据1：产能利用率维持95%+", "ROI证据2：新产品毛利率高于上代5pp", "ROI证据3"],
-    "management_commitment": "管理层承诺，如：2026年产能翻倍，毛利率维持75%+"
+    "roi_evidence": [
+      "产能利用率维持XX%+",
+      "新产品毛利率高于上代Xpp",
+      "[具体客户]订单同比+XX%"
+    ],
+    "management_commitment": "管理层承诺：[具体时间]产能翻倍，毛利率维持XX%+"
   },
   
   "sustainability_risks": {
-    "sustainable_drivers": ["可持续驱动1：AI训练需求3年CAGR 50%+", "可持续驱动2：推理场景逐步放量", "可持续驱动3：技术领先优势"],
-    "main_risks": ["风险1：客户集中度（前3大客户占比>50%）", "风险2：地缘政治/出口管制", "风险3：竞争对手追赶/替代方案"],
-    "checkpoints": ["检查点1：下季度产能利用率", "检查点2：新产品良率爬坡", "检查点3：客户CapEx指引变化"]
+    "sustainable_drivers": [
+      "AI训练需求X年CAGR XX%+",
+      "推理场景逐步放量",
+      "技术领先优势：[具体制程/架构]"
+    ],
+    "main_risks": [
+      "客户集中度（前3大客户占比>XX%）",
+      "地缘政治/出口管制风险",
+      "竞争对手追赶/替代方案（[具体对手]）"
+    ],
+    "checkpoints": [
+      "下季度产能利用率是否维持",
+      "新产品良率爬坡进度",
+      "客户CapEx指引是否持续上调"
+    ]
   },
   
   "model_impact": {
-    "revenue_adjustment": "收入假设调整，如：上调2026年数据中心收入预期15%",
-    "capex_adjustment": "CapEx假设调整，如：上调产能扩张投资预期",
-    "valuation_change": "估值变化，如：维持高估值倍数，上调目标价",
-    "logic_chain": "逻辑链：AI需求持续超预期 → 供不应求延长 → ASP和毛利率维持高位 → 上调盈利预期"
+    "revenue_adjustment": "上调[下年]数据中心收入预期XX%",
+    "capex_adjustment": "上调产能扩张投资预期",
+    "valuation_change": "维持高估值倍数，上调目标价",
+    "logic_chain": "AI需求持续超预期 → 供不应求延长 → ASP和毛利率维持高位 → 上调盈利预期"
   },
   
   "final_judgment": {
     "confidence": "我们更有信心的是：AI算力需求的持续性和公司的技术领先地位",
     "concerns": "我们更担心的是：客户集中度风险和地缘政治不确定性",
     "net_impact": "更强/更弱/不变",
-    "recommendation": "建议：如维持超配，关注产能扩张进度"
+    "recommendation": "维持超配，关注产能扩张进度和竞争格局变化"
   }
 }
 
@@ -250,9 +293,8 @@ const AI_SUPPLY_CHAIN_PROMPT = `角色与目标
 - 必须关注供需平衡：产能、良率、库存、交货周期
 - 必须量化客户结构：前N大客户占比、CSP vs 企业客户
 - 必须跟踪技术路线图：制程节点、封装技术、产品代际
-- 必须识别周期性因素：库存周期、CapEx周期、更换周期
-- 不允许空泛形容词（"强劲""亮眼"）不带指标
-- results_table必须包含至少5-7行关键指标`
+- 必须识别周期性因素：库存周期、CapEx周期
+- results_table必须包含7-10行（含分部收入、margin、inventory、指引）`
 
 // 根据公司类型获取对应的 prompt
 function getPromptByType(companyType: CompanyType): string {
@@ -285,6 +327,7 @@ const ANALYSIS_JSON_SCHEMA = {
           },
         },
         results_explanation: { type: 'string' },
+        guidance_vs_expectations: { type: 'string' },
         drivers_summary: { type: 'string' },
         drivers: {
           type: 'object',
@@ -371,6 +414,7 @@ const ANALYSIS_JSON_SCHEMA = {
         'results_summary',
         'results_table',
         'results_explanation',
+        'guidance_vs_expectations',
         'drivers_summary',
         'drivers',
         'investment_roi',
@@ -409,7 +453,13 @@ export async function analyzeFinancialReport(
 财报内容:
 ${reportText}
 
-请严格按照JSON格式输出完整分析，确保每个字段都有详细内容。results_table必须包含5-7行关键财务指标对比。`,
+请严格按照JSON格式输出**详细完整**的分析报告。要求：
+1. results_table 必须包含 7-10 行关键指标对比
+2. 所有数字必须具体，不要使用"约"、"大约"
+3. 驱动层每块必须有多个具体指标和变化幅度
+4. results_explanation 必须分：需求端、供给/成本端、非经常性 三部分
+5. guidance_vs_expectations 必须详细列出各项指引和市场预期对比
+6. final_judgment 必须是完整的投委会可用段落`,
       },
     ],
     response_format: ANALYSIS_JSON_SCHEMA,

@@ -22,6 +22,7 @@ export interface StoredAnalysis {
   results_summary?: string
   results_table?: ResultsTableRow[]
   results_explanation?: string
+  guidance_vs_expectations?: string  // 指引 vs 市场预期
   drivers_summary?: string
   drivers?: {
     demand: DriverDetail

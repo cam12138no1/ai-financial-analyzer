@@ -239,8 +239,15 @@ export default function AnalysisView({ analysis, onBack }: AnalysisViewProps) {
             
             {analysis.results_explanation && (
               <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <h4 className="font-medium text-blue-900 mb-1">关键解释</h4>
-                <p className="text-sm text-blue-800">{analysis.results_explanation}</p>
+                <h4 className="font-medium text-blue-900 mb-2">差异来源拆解</h4>
+                <p className="text-sm text-blue-800 whitespace-pre-line">{analysis.results_explanation}</p>
+              </div>
+            )}
+            
+            {analysis.guidance_vs_expectations && (
+              <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <h4 className="font-medium text-amber-900 mb-2">指引 vs 市场隐含预期</h4>
+                <p className="text-sm text-amber-800 whitespace-pre-line">{analysis.guidance_vs_expectations}</p>
               </div>
             )}
           </CardContent>
@@ -270,20 +277,17 @@ export default function AnalysisView({ analysis, onBack }: AnalysisViewProps) {
                 <div className="flex items-center gap-2 mb-3">
                   <Users className="h-4 w-4 text-green-600" />
                   <h4 className="font-semibold text-green-900">A. 需求/量</h4>
+                  <span className="text-green-600 font-medium text-sm ml-auto">{analysis.drivers.demand?.magnitude || ''}</span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">变化：</span>
-                    {analysis.drivers.demand?.change || '-'}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">幅度：</span>
-                    <span className="text-green-600 font-medium">{analysis.drivers.demand?.magnitude || '-'}</span>
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">原因：</span>
-                    {analysis.drivers.demand?.reason || '-'}
-                  </p>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">发生了什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.demand?.change || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">为什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.demand?.reason || '-'}</p>
+                  </div>
                 </div>
               </div>
               
@@ -292,20 +296,17 @@ export default function AnalysisView({ analysis, onBack }: AnalysisViewProps) {
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="h-4 w-4 text-blue-600" />
                   <h4 className="font-semibold text-blue-900">B. 变现/单价</h4>
+                  <span className="text-blue-600 font-medium text-sm ml-auto">{analysis.drivers.monetization?.magnitude || ''}</span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">变化：</span>
-                    {analysis.drivers.monetization?.change || '-'}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">幅度：</span>
-                    <span className="text-blue-600 font-medium">{analysis.drivers.monetization?.magnitude || '-'}</span>
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">原因：</span>
-                    {analysis.drivers.monetization?.reason || '-'}
-                  </p>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">发生了什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.monetization?.change || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">为什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.monetization?.reason || '-'}</p>
+                  </div>
                 </div>
               </div>
               
@@ -314,20 +315,17 @@ export default function AnalysisView({ analysis, onBack }: AnalysisViewProps) {
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="h-4 w-4 text-amber-600" />
                   <h4 className="font-semibold text-amber-900">C. 内部效率</h4>
+                  <span className="text-amber-600 font-medium text-sm ml-auto">{analysis.drivers.efficiency?.magnitude || ''}</span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">变化：</span>
-                    {analysis.drivers.efficiency?.change || '-'}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">幅度：</span>
-                    <span className="text-amber-600 font-medium">{analysis.drivers.efficiency?.magnitude || '-'}</span>
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-medium text-gray-900">原因：</span>
-                    {analysis.drivers.efficiency?.reason || '-'}
-                  </p>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">发生了什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.efficiency?.change || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 mb-1">为什么：</p>
+                    <p className="text-gray-700 whitespace-pre-line">{analysis.drivers.efficiency?.reason || '-'}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -343,42 +341,45 @@ export default function AnalysisView({ analysis, onBack }: AnalysisViewProps) {
               <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-indigo-600" />
               </div>
-              <CardTitle className="text-lg">3) 投入与 ROI</CardTitle>
+              <CardTitle className="text-lg">3) 投入与 ROI：这轮重投"买到了什么"</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-medium text-gray-500 mb-1">CapEx 变化</p>
-                <p className="text-gray-900">{analysis.investment_roi.capex_change || '-'}</p>
+              <div className="p-4 bg-gray-50 rounded-xl md:col-span-2">
+                <p className="text-xs font-medium text-gray-500 mb-2">本期投入变化（主要矛盾）</p>
+                <p className="text-gray-900 whitespace-pre-line">{analysis.investment_roi.capex_change || '-'}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-medium text-gray-500 mb-1">Opex 变化</p>
-                <p className="text-gray-900">{analysis.investment_roi.opex_change || '-'}</p>
+                <p className="text-xs font-medium text-gray-500 mb-2">Opex 变化</p>
+                <p className="text-gray-900 whitespace-pre-line">{analysis.investment_roi.opex_change || '-'}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-medium text-gray-500 mb-1">投入指向</p>
-                <p className="text-gray-900">{analysis.investment_roi.investment_direction || '-'}</p>
-              </div>
-              <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-xs font-medium text-amber-700 mb-1">管理层承诺</p>
-                <p className="text-amber-900 font-medium">{analysis.investment_roi.management_commitment || '-'}</p>
+                <p className="text-xs font-medium text-gray-500 mb-2">投入指向</p>
+                <p className="text-gray-900 whitespace-pre-line">{analysis.investment_roi.investment_direction || '-'}</p>
               </div>
             </div>
             
             {analysis.investment_roi.roi_evidence && analysis.investment_roi.roi_evidence.length > 0 && (
-              <div className="p-4 bg-green-50 rounded-xl border border-green-100">
-                <p className="text-xs font-medium text-green-700 mb-2">ROI 证据（已验证）</p>
-                <ul className="space-y-1">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100 mb-4">
+                <p className="text-xs font-medium text-green-700 mb-2">已体现的 ROI 证据</p>
+                <ul className="space-y-2">
                   {analysis.investment_roi.roi_evidence.map((evidence: string, idx: number) => (
                     <li key={idx} className="text-sm text-green-800 flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                      {evidence}
+                      <span className="inline-flex items-center justify-center w-5 h-5 bg-green-200 text-green-800 text-xs font-bold rounded flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="whitespace-pre-line">{evidence}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
+            
+            <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+              <p className="text-xs font-medium text-amber-700 mb-2">管理层"底线承诺/框架"</p>
+              <p className="text-amber-900 whitespace-pre-line">{analysis.investment_roi.management_commitment || '-'}</p>
+            </div>
           </CardContent>
         </Card>
       )}

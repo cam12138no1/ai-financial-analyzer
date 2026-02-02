@@ -1,13 +1,13 @@
 'use client'
 
-import { SessionProvider } from 'next-auth/react'
+import { UserProvider } from '@/lib/user-context'
 import { Toaster } from '@/components/ui/toaster'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <UserProvider>
       {children}
       <Toaster />
-    </SessionProvider>
+    </UserProvider>
   )
 }

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { extractTextFromDocument } from '@/lib/document-parser'
 import { analyzeFinancialReport, CompanyType } from '@/lib/ai/analyzer'
 import { extractMetadataFromReport } from '@/lib/ai/extractor'
@@ -13,10 +11,7 @@ export async function POST(request: NextRequest) {
   let processingId: string | null = null
   
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // 不再需要 session 验证，通过浏览器 ID 识别用户
 
     const formData = await request.formData()
     const file = formData.get('file') as File

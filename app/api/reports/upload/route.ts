@@ -7,12 +7,53 @@ import { analysisStore } from '@/lib/store'
 export const runtime = 'nodejs'
 export const maxDuration = 300 // 5 minutes
 
-export async function POST(request: NextRequest) {
-  let processingId: string | null = null
-  
+// 后台处理分析（不阻塞响应）
+async function processAnalysisInBackground(
+  processingId: string,
+  reportText: string,
+  metadata: any,
+  companyType: CompanyType
+) {
   try {
-    // 不再需要 session 验证，通过浏览器 ID 识别用户
+    console.log(`[Background] Starting analysis for ${metadata.company_name}...`)
+    
+    const analysis = await analyzeFinancialReport(reportText, {
+      company: metadata.company_name,
+      symbol: metadata.company_symbol,
+      period: metadata.fiscal_quarter 
+        ? `Q${metadata.fiscal_quarter} ${metadata.fiscal_year}` 
+        : `FY ${metadata.fiscal_year}`,
+      fiscalYear: metadata.fiscal_year,
+      fiscalQuarter: metadata.fiscal_quarter || undefined,
+      companyType: companyType,
+      consensus: {
+        revenue: metadata.revenue || undefined,
+        eps: metadata.eps || undefined,
+        operatingIncome: metadata.operating_income || undefined,
+      },
+    })
 
+    // 更新记录为已完成
+    analysisStore.update(processingId, {
+      processed: true,
+      processing: false,
+      ...analysis,
+    })
+
+    console.log(`[Background] Analysis complete: ${processingId}`)
+  } catch (error: any) {
+    console.error(`[Background] Analysis failed for ${processingId}:`, error)
+    
+    analysisStore.update(processingId, {
+      processing: false,
+      processed: false,
+      error: error.message || 'Analysis failed',
+    })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const companyType = (formData.get('companyType') as CompanyType) || 'ai_application'
@@ -30,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Extract text from PDF
+    // 1. 提取 PDF 文本
     console.log('[Upload] Extracting text from PDF...')
     const reportText = await extractTextFromDocument(buffer, file.type)
 
@@ -38,12 +79,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
     }
 
-    // Extract metadata using AI
+    // 2. 提取元数据（快速）
     console.log('[Upload] Extracting metadata with AI...')
     const metadata = await extractMetadataFromReport(reportText)
     console.log('[Upload] Extracted metadata:', metadata)
 
-    // Create processing entry
+    // 3. 立即创建"处理中"状态的记录
     const processingEntry = analysisStore.add({
       company_name: metadata.company_name,
       company_symbol: metadata.company_symbol,
@@ -54,55 +95,34 @@ export async function POST(request: NextRequest) {
       filing_date: metadata.filing_date,
       created_at: new Date().toISOString(),
       processed: false,
-      processing: true,
+      processing: true,  // 标记为处理中
     })
-    processingId = processingEntry.id
-    console.log('[Upload] Created processing entry:', processingId)
+    
+    console.log('[Upload] Created processing entry:', processingEntry.id)
 
-    // Analyze the report with the selected company type
-    console.log(`[Upload] Analyzing report as ${companyType}...`)
-    const analysis = await analyzeFinancialReport(reportText, {
-      company: metadata.company_name,
-      symbol: metadata.company_symbol,
-      period: metadata.fiscal_quarter 
-        ? `Q${metadata.fiscal_quarter} ${metadata.fiscal_year}` 
-        : `FY ${metadata.fiscal_year}`,
-      fiscalYear: metadata.fiscal_year,
-      fiscalQuarter: metadata.fiscal_quarter || undefined,
-      companyType: companyType,
-      consensus: {
-        revenue: metadata.revenue || undefined,
-        eps: metadata.eps || undefined,
-        operatingIncome: metadata.operating_income || undefined,
-      },
+    // 4. 在后台启动分析（不等待完成）
+    // 使用 setImmediate 确保响应先返回
+    setImmediate(() => {
+      processAnalysisInBackground(
+        processingEntry.id,
+        reportText,
+        metadata,
+        companyType
+      )
     })
 
-    // Update record as completed
-    const storedAnalysis = analysisStore.update(processingId, {
-      processed: true,
-      processing: false,
-      ...analysis,
-    })
-
-    console.log('[Upload] Analysis complete:', processingId)
-
+    // 5. 立即返回响应（不等待分析完成）
     return NextResponse.json({
       success: true,
-      analysis_id: processingId,
+      analysis_id: processingEntry.id,
       company_type: companyType,
       metadata,
-      analysis: storedAnalysis,
+      status: 'processing',
+      message: '分析已开始，请稍候刷新查看结果',
     })
+    
   } catch (error: any) {
     console.error('[Upload] Error:', error)
-    
-    if (processingId) {
-      analysisStore.update(processingId, {
-        processing: false,
-        processed: false,
-        error: error.message || 'Analysis failed',
-      })
-    }
     
     return NextResponse.json(
       { error: error.message || 'Failed to process report' },

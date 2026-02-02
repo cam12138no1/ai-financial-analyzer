@@ -104,18 +104,20 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     }
 
     setIsSubmitting(true)
-    setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })))
-
-    toast({
-      title: '📤 正在后台处理',
-      description: `${files.length} 份财报已提交分析，完成后将自动更新`,
-    })
     
+    // 关闭模态框
     onClose()
 
-    const pendingFiles = [...files]
-    const results: { success: number; failed: number } = { success: 0, failed: 0 }
+    toast({
+      title: '📤 正在上传',
+      description: `${files.length} 份财报正在提交...`,
+    })
 
+    const pendingFiles = [...files]
+    let submitted = 0
+    let failed = 0
+
+    // 并发上传所有文件（API 会立即返回）
     const uploadFile = async (fileItem: FileWithStatus) => {
       try {
         const formData = new FormData()
@@ -132,31 +134,32 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
           throw new Error(result.error || 'Upload failed')
         }
 
-        results.success++
+        submitted++
+        console.log(`[Upload] Submitted ${fileItem.file.name}`)
       } catch (error: any) {
-        results.failed++
-        console.error(`Failed to upload ${fileItem.file.name}:`, error)
+        failed++
+        console.error(`[Upload] Failed ${fileItem.file.name}:`, error)
       }
     }
 
-    for (let i = 0; i < pendingFiles.length; i += 3) {
-      const batch = pendingFiles.slice(i, i + 3)
-      await Promise.all(batch.map(uploadFile))
-    }
+    // 并发上传所有文件
+    await Promise.all(pendingFiles.map(uploadFile))
 
-    if (results.failed === 0) {
+    // 显示提交结果
+    if (failed === 0) {
       toast({
-        title: '✅ 分析完成',
-        description: `${results.success} 份财报分析已完成`,
+        title: '✅ 已提交分析',
+        description: `${submitted} 份财报已提交，AI 正在后台分析中...`,
       })
     } else {
       toast({
-        title: '⚠️ 部分完成',
-        description: `成功 ${results.success}，失败 ${results.failed}`,
-        variant: results.success === 0 ? 'destructive' : 'default',
+        title: '⚠️ 部分提交失败',
+        description: `成功 ${submitted}，失败 ${failed}`,
+        variant: 'destructive',
       })
     }
 
+    // 刷新列表
     setFiles([])
     setIsSubmitting(false)
     onSuccess()

@@ -15,6 +15,7 @@ export default function DashboardClient() {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null)
   const [processingCount, setProcessingCount] = useState(0)
+  const [refreshKey, setRefreshKey] = useState(0)  // 用于强制刷新列表
   const [stats, setStats] = useState({
     totalReports: 0,
     companiesAnalyzed: 0,
@@ -231,7 +232,11 @@ export default function DashboardClient() {
       {/* Reports List */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-0">
-          <ReportList onSelectAnalysis={setSelectedAnalysis} onRefresh={loadDashboardData} />
+          <ReportList 
+            key={refreshKey}
+            onSelectAnalysis={setSelectedAnalysis} 
+            onRefresh={loadDashboardData} 
+          />
         </CardContent>
       </Card>
 
@@ -240,7 +245,21 @@ export default function DashboardClient() {
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onSuccess={() => {
+          // 强制刷新列表和数据
+          setRefreshKey(k => k + 1)
           loadDashboardData()
+          
+          // 开始临时轮询（因为 processingCount 可能还没更新）
+          const tempPoll = setInterval(async () => {
+            const count = await loadDashboardData()
+            setRefreshKey(k => k + 1)
+            if (count === 0) {
+              clearInterval(tempPoll)
+            }
+          }, 2000)
+          
+          // 30秒后停止临时轮询
+          setTimeout(() => clearInterval(tempPoll), 30000)
         }}
       />
     </div>

@@ -110,7 +110,7 @@ export default function ReportList({ onSelectAnalysis, onRefresh }: ReportListPr
         <h3 className="font-semibold text-gray-900">{t('dashboard.recentReports')}</h3>
         <Button variant="ghost" size="sm" onClick={loadReports} className="text-gray-500">
           <RefreshCw className="h-4 w-4 mr-1" />
-          刷新
+          {t('common.refresh')}
         </Button>
       </div>
       
@@ -175,11 +175,11 @@ export default function ReportList({ onSelectAnalysis, onRefresh }: ReportListPr
               {report.processing ? (
                 <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  AI 正在分析财报，提取关键数据...
+                  {t('common.analyzing2')}
                 </p>
               ) : report.error ? (
                 <p className="text-sm text-red-600 mt-1">
-                  分析失败: {report.error}
+                  {t('common.analysisFailed')}: {report.error}
                 </p>
               ) : report.one_line_conclusion ? (
                 <p className="text-sm text-gray-600 mt-1 line-clamp-1">
@@ -193,18 +193,18 @@ export default function ReportList({ onSelectAnalysis, onRefresh }: ReportListPr
               {report.processing ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  分析中
+                  {t('common.processing')}
                 </span>
               ) : report.error ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                   <AlertCircle className="h-3 w-3" />
-                  失败
+                  {t('common.error')}
                 </span>
               ) : report.processed ? (
                 <div className="flex items-center gap-2">
                   {getNetImpactIcon(report)}
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    已完成
+                    {t('common.completed')}
                   </span>
                 </div>
               ) : null}

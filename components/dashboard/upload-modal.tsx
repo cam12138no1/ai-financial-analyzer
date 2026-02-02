@@ -60,7 +60,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (invalidFiles.length > 0) {
       toast({
         title: t('common.error'),
-        description: `Only PDF files supported: ${invalidFiles.join(', ')}`,
+        description: `${t('upload.onlyPdfSupported')}: ${invalidFiles.join(', ')}`,
         variant: 'destructive',
       })
     }
@@ -108,8 +108,8 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
     // Show toast and close modal immediately
     toast({
-      title: '📤 正在后台处理',
-      description: `${files.length} 份财报已提交分析，完成后将自动更新`,
+      title: `📤 ${t('upload.backgroundProcessing')}`,
+      description: t('upload.submittedForAnalysis', { count: files.length }),
     })
     
     // Close modal immediately - processing continues in background
@@ -150,13 +150,13 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     // Show completion toast
     if (results.failed === 0) {
       toast({
-        title: '✅ 分析完成',
-        description: `${results.success} 份财报分析已完成`,
+        title: `✅ ${t('upload.analysisComplete')}`,
+        description: t('upload.reportsCompleted', { count: results.success }),
       })
     } else {
       toast({
-        title: '⚠️ 部分完成',
-        description: `成功 ${results.success}，失败 ${results.failed}`,
+        title: `⚠️ ${t('upload.partialComplete')}`,
+        description: t('upload.successFailed', { success: results.success, failed: results.failed }),
         variant: results.success === 0 ? 'destructive' : 'default',
       })
     }
@@ -176,8 +176,8 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">批量上传财报</h2>
-              <p className="text-blue-100 text-sm mt-1">支持多文件拖拽上传，AI自动分析归档</p>
+              <h2 className="text-xl font-bold text-white">{t('upload.title')}</h2>
+              <p className="text-blue-100 text-sm mt-1">{t('upload.subtitle')}</p>
             </div>
             <Button 
               variant="ghost" 
@@ -220,10 +220,10 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                 </div>
                 <div>
                   <p className="text-lg font-medium text-gray-900">
-                    拖拽文件到此处或 <span className="text-blue-600">点击选择</span>
+                    {t('upload.dragDrop')} <span className="text-blue-600">{t('upload.clickSelect')}</span>
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    支持批量上传 PDF 格式财报
+                    {t('upload.supportBatch')}
                   </p>
                 </div>
               </div>
@@ -301,9 +301,9 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                 </svg>
               </div>
               <div className="text-sm">
-                <p className="font-medium text-blue-900">AI 智能分析</p>
+                <p className="font-medium text-blue-900">{t('upload.aiSmartAnalysis')}</p>
                 <p className="text-blue-700 mt-0.5">
-                  自动提取公司名称、财务数据、关键指标，生成完整的投委会级别分析报告
+                  {t('upload.aiDescription')}
                 </p>
               </div>
             </div>
@@ -316,7 +316,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
               onClick={onClose}
               className="px-6"
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button 
               onClick={handleSubmit}
@@ -326,12 +326,12 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  提交中...
+                  {t('upload.submitting')}
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  开始分析 ({files.length})
+                  {t('upload.startAnalysis')} ({files.length})
                 </>
               )}
             </Button>

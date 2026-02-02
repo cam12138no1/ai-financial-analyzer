@@ -109,12 +109,12 @@ export default function DashboardClient() {
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="font-semibold">正在分析 {processingCount} 份财报...</p>
-              <p className="text-sm text-amber-100">AI 正在提取数据并生成分析报告，请稍候</p>
+              <p className="font-semibold">{t('common.processingBanner', { count: processingCount })}</p>
+              <p className="text-sm text-amber-100">{t('common.processingDescription')}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-amber-100">自动刷新中</p>
+            <p className="text-sm text-amber-100">{t('common.autoRefreshing')}</p>
           </div>
         </div>
       )}
@@ -126,7 +126,7 @@ export default function DashboardClient() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="h-5 w-5 text-yellow-300" />
-              <span className="text-sm font-medium text-blue-100">AI 驱动的财报分析</span>
+              <span className="text-sm font-medium text-blue-100">{t('common.aiDriven')}</span>
             </div>
             <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
             <p className="text-blue-100 mt-2 max-w-lg">{t('dashboard.subtitle')}</p>
@@ -138,15 +138,14 @@ export default function DashboardClient() {
               className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
             >
               <Upload className="mr-2 h-5 w-5" />
-              批量上传
+              {t('common.uploadReport')}
             </Button>
             <Link href="/dashboard/summary">
               <Button 
                 size="lg"
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10"
+                className="bg-white/20 text-white border-2 border-white/50 hover:bg-white/30 backdrop-blur-sm"
               >
-                查看汇总表
+                {t('nav.analysis')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -209,8 +208,8 @@ export default function DashboardClient() {
             <Plus className="h-6 w-6 text-blue-600" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-gray-900">上传新财报</p>
-            <p className="text-sm text-gray-500">支持 PDF 格式，批量上传</p>
+            <p className="font-semibold text-gray-900">{t('common.uploadNew')}</p>
+            <p className="text-sm text-gray-500">{t('common.supportPdf')}</p>
           </div>
         </button>
         
@@ -222,8 +221,8 @@ export default function DashboardClient() {
             <BarChart3 className="h-6 w-6 text-purple-600" />
           </div>
           <div className="text-left flex-1">
-            <p className="font-semibold text-gray-900">财报汇总表</p>
-            <p className="text-sm text-gray-500">所有分析要点的动态视图</p>
+            <p className="font-semibold text-gray-900">{t('common.summarySheet')}</p>
+            <p className="text-sm text-gray-500">{t('common.summaryDescription')}</p>
           </div>
           <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
         </Link>
